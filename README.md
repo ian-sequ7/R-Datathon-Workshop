@@ -32,7 +32,7 @@ the session.
 Everything is installed and the data is already in place. Nothing to
 download.
 
-**Workshop link:** `<TO BE ADDED>`
+**Workshop link:** https://posit.cloud/content/13007297
 
 Create a free account at [posit.cloud](https://posit.cloud) before the
 workshop and confirm you can sign in. Please do this in advance so that
