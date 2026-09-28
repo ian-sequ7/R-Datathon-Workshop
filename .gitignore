@@ -1,0 +1,14 @@
+# R
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# Knitted output (regenerate with Knit)
+*_files/
+*_cache/
+
+# OS
+.DS_Store
+Thumbs.db

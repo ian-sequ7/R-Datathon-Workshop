@@ -1,0 +1,195 @@
+---
+title: "Health Insurance Rating Case: Pricing Workshop"
+subtitle: "IX Simposio Internacional de Actuaría"
+author: "Ian Duncan, PhD FSA FIA FCIA FCA CSPA MAAA"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    df_print: paged
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+## Setup
+
+If these packages are not already installed, run this once:
+
+```{r install, eval = FALSE}
+install.packages(c("readxl", "dplyr", "knitr", "rmarkdown"))
+```
+
+```{r libraries}
+library(readxl)
+library(dplyr)
+```
+
+## Load the claims data
+
+The dataset is 100,000 members with 12 months of continuous eligibility,
+so 1,200,000 member months. Claims experience is 2025; we are pricing for
+2027.
+
+```{r load}
+df <- readRDS("data/claims_2025.rds")
+
+# The sheet carries a few blank rows past the last member record.
+# Drop them so they do not form a spurious age group.
+df <- df %>% filter(!is.na(AGE))
+
+nrow(df)
+```
+
+```{r age-groups}
+df <- df %>%
+  mutate(Age_Group = case_when(
+    AGE <= 17               ~ "0-17",
+    AGE >= 18 & AGE <= 44   ~ "18-44",
+    AGE >= 45               ~ "45+"
+  ))
+
+table(df$Age_Group)
+```
+
+## Plan designs
+
+GIA: $200 deductible, then 10% coinsurance.
+
+```{r gia}
+df <- df %>%
+  mutate(
+    GIA_Paid_Est = pmax(`Medical Allowed` - 200, 0) * 0.9
+  )
+```
+
+XAX: $200 general deductible, $1,000 inpatient facility deductible,
+10% coinsurance on all other services.
+
+```{r xax}
+df <- df %>%
+  mutate(
+    XAX_IPF_Paid      = pmax(`IP Facility Allowed` - 1000, 0),
+    XAX_Other_Allowed = `Medical Allowed` - `IP Facility Allowed`,
+    XAX_Other_Paid    = pmax(XAX_Other_Allowed - 200, 0) * 0.9,
+    XAX_Paid_Est      = XAX_IPF_Paid + XAX_Other_Paid
+  )
+```
+
+## Claims PMPM by age group
+
+Rx is excluded from the claims cost because the proposed CYA plan does not
+reimburse prescription drugs. Rx claim counts are still used in the
+administrative load below.
+
+```{r pmpm}
+pmpm_by_age <- df %>%
+  group_by(Age_Group) %>%
+  summarise(
+    members        = n(),
+    total_allowed  = sum(`Medical Allowed`, na.rm = TRUE),
+    GIA_total_paid = sum(GIA_Paid_Est,      na.rm = TRUE),
+    XAX_total_paid = sum(XAX_Paid_Est,      na.rm = TRUE),
+    PMPM_Allowed   = total_allowed  / (members * 12),
+    GIA_PMPM       = GIA_total_paid / (members * 12),
+    XAX_PMPM       = XAX_total_paid / (members * 12)
+  )
+
+pmpm_by_age
+```
+
+## Trend to the pricing year
+
+Experience is 2025 and we are pricing for 2027, so two years of trend at
+6% per year.
+
+```{r trend}
+trend_factor <- 1.06^2
+
+pmpm_by_age <- pmpm_by_age %>%
+  mutate(
+    PMPM_Allowed_2027 = PMPM_Allowed * trend_factor,
+    GIA_PMPM_2027     = GIA_PMPM     * trend_factor,
+    XAX_PMPM_2027     = XAX_PMPM     * trend_factor
+  )
+```
+
+## Administrative load
+
+$50 per policy per year, $10 per medical claim, $5 per Rx claim,
+expressed as a percentage of allowed claims.
+
+```{r admin}
+admin_fixed <- 50
+
+admin_summary <- df %>%
+  summarise(
+    med_claims = sum(`Medical Claim Count`, na.rm = TRUE),
+    rx_claims  = sum(`Rx Claim Count`,      na.rm = TRUE)
+  ) %>%
+  mutate(
+    admin_total = admin_fixed * nrow(df) + 10 * med_claims + 5 * rx_claims
+  )
+
+total_admin   <- admin_summary$admin_total
+total_allowed <- sum(df$`Medical Allowed`, na.rm = TRUE)
+admin_load    <- total_admin / total_allowed
+
+cat("Total administrative expense:",
+    format(round(total_admin), big.mark = ","), "\n")
+cat("Total allowed charges:      ",
+    format(round(total_allowed), big.mark = ","), "\n")
+cat("Administrative load:        ",
+    round(admin_load * 100, 2), "% of allowed claims\n")
+```
+
+## Projected 2027 rates
+
+Two loads are applied: the administrative load calculated above, and a
+10% allowance for agent compensation.
+
+```{r rates}
+agent_load <- 0.10
+
+pmpm_by_age <- pmpm_by_age %>%
+  mutate(
+    GIA_Gross_Premium = GIA_PMPM_2027 / (1 - admin_load - agent_load),
+    XAX_Gross_Premium = XAX_PMPM_2027 / (1 - admin_load - agent_load)
+  )
+```
+
+## Results
+
+```{r results-claims}
+knitr::kable(
+  pmpm_by_age %>%
+    select(Age_Group, members, PMPM_Allowed, GIA_PMPM, XAX_PMPM),
+  digits  = 2,
+  caption = "2025 claims cost PMPM by age group"
+)
+```
+
+```{r results-rates}
+knitr::kable(
+  pmpm_by_age %>%
+    select(Age_Group,
+           GIA_PMPM_2027, XAX_PMPM_2027,
+           GIA_Gross_Premium, XAX_Gross_Premium),
+  digits  = 2,
+  caption = "2027 trended claims and gross premiums by age group"
+)
+```
+
+## Next steps
+
+The remaining assignments use the accident claims study in
+`data/accident-claims-study.xlsx`:
+
+- Table I: frequency tables
+- Table II: cost distribution, allowed charges vs scheduled cash payout
+- Table III: simulation study, confidence intervals on a 2,000 member block
+- Table IV: administrative charges
+
+Refer to the assignment slides for what each one is used for.
