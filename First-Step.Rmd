@@ -147,16 +147,20 @@ cat("Administrative load:        ",
 
 ## Projected 2027 rates
 
-Two loads are applied: the administrative load calculated above, and a
-10% allowance for agent compensation.
+Two loads are applied in sequence: first the administrative load
+calculated above, then a 10% allowance for agent compensation.
 
 ```{r rates}
 agent_load <- 0.10
 
 pmpm_by_age <- pmpm_by_age %>%
   mutate(
-    GIA_Gross_Premium = GIA_PMPM_2027 / (1 - admin_load - agent_load),
-    XAX_Gross_Premium = XAX_PMPM_2027 / (1 - admin_load - agent_load)
+    # Gross up for administrative expense first
+    GIA_Rate_Admin    = GIA_PMPM_2027 / (1 - admin_load),
+    XAX_Rate_Admin    = XAX_PMPM_2027 / (1 - admin_load),
+    # then for agent compensation
+    GIA_Gross_Premium = GIA_Rate_Admin / (1 - agent_load),
+    XAX_Gross_Premium = XAX_Rate_Admin / (1 - agent_load)
   )
 ```
 
