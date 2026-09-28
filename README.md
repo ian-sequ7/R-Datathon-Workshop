@@ -58,20 +58,35 @@ is.
 | File | What it is |
 | --- | --- |
 | `First-Step.Rmd` | Starter R code for Assignment 1 |
-| `data/claims_2025.rds` | Market claims data, 100,000 members |
+| `data/claims_2025.rds` | Market claims data, 100,000 members. Loads instantly, used by the starter code |
+| `data/claims_2025.csv` | The same data as CSV, if you want to open it in Excel |
 | `data/accident-claims-study.xlsx` | Accident claims analysis, Tables I to IV |
 
 ### The claims dataset
 
-The claims data is supplied as an R data file. Load it with:
+The claims data comes in two formats, same 100,000 members in each.
+
+The starter code loads the R data file, which is near instant:
 
 ```r
 df <- readRDS("data/claims_2025.rds")
 ```
 
-It is provided in this format because the original Excel version takes
-several minutes to parse and will time out on Posit Cloud's free tier.
-The Excel original is in this repository's history if you want it.
+If you would rather look at the data in a spreadsheet, use the CSV. It
+opens in Excel and reads quickly in R too:
+
+```r
+df <- read.csv("data/claims_2025.csv")
+```
+
+You can also inspect it without leaving RStudio. `View(df)` gives a
+sortable, filterable view and `summary(df)` is a fast way to get a feel
+for the distributions.
+
+The original Excel workbook (`100k_Sample_2025.xlsx`) is kept in this
+repository for reference. Avoid reading it directly during the workshop:
+it takes several minutes to parse and will exhaust the memory available
+on Posit Cloud's free tier.
 
 
 100,000 members with 12 months of continuous eligibility, so 1,200,000
@@ -131,6 +146,11 @@ Pricing assumptions used in the starter code:
 - Administrative load: $50 per policy per year, $10 per medical claim,
   $5 per Rx claim
 - 10% allowance for agent compensation
+
+The two loads are applied in sequence: gross up the trended claims for
+the administrative load, then for agent compensation. This matches the
+case solutions. Folding both into a single denominator instead gives
+premiums about 0.5% higher.
 
 Rx claims are excluded from the claims cost, because the proposed CYA plan
 does not reimburse prescription drugs. Rx claim counts still count toward

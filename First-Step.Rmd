@@ -36,7 +36,7 @@ so 1,200,000 member months. Claims experience is 2025; we are pricing for
 ```{r load}
 df <- readRDS("data/claims_2025.rds")
 
-# The sheet carries a few blank rows past the last member record.
+# The source data carries a few blank rows past the last member record.
 # Drop them so they do not form a spurious age group.
 df <- df %>% filter(!is.na(AGE))
 
