@@ -5,51 +5,32 @@ IX Simposio Internacional de Actuaría.
 
 Presented by Ian Duncan, PhD FSA FIA FCIA FCA CSPA MAAA, UC Santa Barbara.
 
----
-
-## The case
-
-Traditionia is a country of roughly 100 million people. About 15% of the
-working-age population has no health insurance, largely younger workers in
-the informal sector who find comprehensive premiums too expensive.
-
-A change to the insurance law allows mutual affinity groups to form
-insurance pools outside standard insurance regulation. CYA Insurance plans
-to use this to offer an accident-only policy to self-employed workers aged
-18 to 45.
-
-Your job is to price it, and to work out what the competition will charge.
-
-You will work in groups of four and present your findings at the end of
-the session.
+The case is introduced at the start of the session. These are the data and
+starter code you will work with.
 
 ---
 
-## Getting started
+## Before the workshop
 
-### On Posit Cloud (recommended)
+Create a free account at [posit.cloud](https://posit.cloud) and confirm you
+can sign in, so that session time is not spent on setup.
 
-Everything is installed and the data is already in place. Nothing to
-download.
+**Workshop project:** https://posit.cloud/content/13007297
 
-**Workshop link:** https://posit.cloud/content/13007297
+Open the link, click **Save a Permanent Copy**, and you have your own
+working copy. Everything is installed and the data is already in place.
 
-Create a free account at [posit.cloud](https://posit.cloud) before the
-workshop and confirm you can sign in. Please do this in advance so that
-session time is not spent on setup.
-
-### On your own machine
+### Running it on your own machine instead
 
 You will need [R](https://cran.r-project.org) and
-[RStudio](https://posit.co/download/rstudio-desktop/) installed, then:
+[RStudio](https://posit.co/download/rstudio-desktop/), then:
 
 ```r
 install.packages(c("readxl", "dplyr", "knitr", "rmarkdown"))
 ```
 
-Clone or download this repository, open `First-Step.Rmd` in RStudio, and
-knit it. The data paths are relative, so keep the folder structure as it
-is.
+Download this repository, open `First-Step.Rmd`, and knit. Keep the folder
+structure as it is, since the data paths are relative.
 
 ---
 
@@ -57,14 +38,10 @@ is.
 
 | File | What it is |
 | --- | --- |
-| `First-Step.Rmd` | Starter R code for Assignment 1 |
-| `data/claims_2025.rds` | Market claims data, 100,000 members. Loads instantly, used by the starter code |
-| `data/claims_2025.csv` | The same data as CSV, if you want to open it in Excel |
+| `First-Step.Rmd` | Starter code for the first assignment |
+| `data/claims_2025.rds` | Market claims data, 100,000 members |
+| `data/claims_2025.csv` | The same data as CSV, opens in Excel |
 | `data/accident-claims-study.xlsx` | Accident claims analysis, Tables I to IV |
-
-### The claims dataset
-
-The claims data comes in two formats, same 100,000 members in each.
 
 The starter code loads the R data file, which is near instant:
 
@@ -72,100 +49,42 @@ The starter code loads the R data file, which is near instant:
 df <- readRDS("data/claims_2025.rds")
 ```
 
-If you would rather look at the data in a spreadsheet, use the CSV. It
-opens in Excel and reads quickly in R too:
+Use the CSV instead if you would rather look at the data in a spreadsheet.
+Inside RStudio, `View(df)` and `summary(df)` are quick ways to get a feel
+for it.
 
-```r
-df <- read.csv("data/claims_2025.csv")
-```
+You are welcome to write your own code. The starter is there so nobody
+loses time to data wrangling.
 
-You can also inspect it without leaving RStudio. `View(df)` gives a
-sortable, filterable view and `summary(df)` is a fast way to get a feel
-for the distributions.
+---
 
-The original Excel workbook (`100k_Sample_2025.xlsx`) is kept in this
-repository for reference. Avoid reading it directly during the workshop:
-it takes several minutes to parse and will exhaust the memory available
-on Posit Cloud's free tier.
-
+## The claims data
 
 100,000 members with 12 months of continuous eligibility, so 1,200,000
 member months of exposure. Experience year is 2025.
 
-Claims are split by type of service:
+Claims are split by type of service: inpatient facility, inpatient
+professional, outpatient facility, outpatient professional, and Rx.
 
-- Inpatient facility (hospital)
-- Inpatient professional (surgery, physicians)
-- Outpatient facility
-- Outpatient professional
-- Rx (prescription drugs)
+Each is recorded as **allowed**, meaning eligible for payment before
+deductibles and coinsurance, and **paid**, meaning the plan's share net of
+member cost sharing. This is a claims extract, so it carries no provision
+for administration or other expenses.
 
-Each is recorded as **allowed** (eligible for payment, before deductibles
-and coinsurance) and **paid** (the plan's share, net of member cost
-sharing). This is a claims extract, so it carries no provision for
-administration or other expenses.
+Medical claims are inpatient plus outpatient. Total claims are medical plus
+Rx.
 
-Medical claims are inpatient plus outpatient. Total claims are medical
-plus Rx.
-
-### The accident claims study
-
-Used from Assignment 2 onward.
-
-| Table | Contents |
-| --- | --- |
-| I | Frequency tables by care setting |
-| II | Cost distribution, allowed charges vs scheduled cash payout |
-| III | Simulation study, confidence intervals on a 2,000 member block |
-| IV | Administrative charges |
-
----
-
-## The starter code
-
-`First-Step.Rmd` works through Assignment 1: it loads the claims data,
-groups members into age bands, applies the GIA and XAX plan designs,
-calculates claims PMPM by age band, trends to the pricing year, and adds
-the expense loads.
-
-You are welcome to write your own code instead. The starter is there so
-that groups are not held up by data wrangling.
-
-Plan designs:
-
-| | GIA | XAX |
-| --- | --- | --- |
-| Deductible | $200 | $200 |
-| Inpatient facility deductible | n/a | $1,000 |
-| Coinsurance | 10% | 10% on all other services |
-
-Pricing assumptions used in the starter code:
-
-- Experience year 2025, pricing year 2027, so two years of trend
-- 6% annual claims trend
-- Administrative load: $50 per policy per year, $10 per medical claim,
-  $5 per Rx claim
-- 10% allowance for agent compensation
-
-The two loads are applied in sequence: gross up the trended claims for
-the administrative load, then for agent compensation. This matches the
-case solutions. Folding both into a single denominator instead gives
-premiums about 0.5% higher.
-
-Rx claims are excluded from the claims cost, because the proposed CYA plan
-does not reimburse prescription drugs. Rx claim counts still count toward
-the administrative load.
-
----
-
-## Presentations
-
-Each group has 5 to 10 minutes to present to the panel of judges. A
-presentation template will be provided.
+The accident claims study is used from the second assignment onward and
+contains Tables I to IV: frequency tables, cost distribution, a simulation
+study, and administrative charges.
 
 ---
 
 ## Notes
+
+The original Excel workbook (`100k_Sample_2025.xlsx`) is kept here for
+reference. Avoid reading it during the workshop: it takes several minutes
+to parse and will exhaust the memory available on Posit Cloud's free tier.
 
 The dataset is a de-identified claims extract prepared for teaching. The
 country, the insurers and the product are fictional.
